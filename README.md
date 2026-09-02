@@ -81,6 +81,23 @@ Load sample BTCUSDT / USDIRR tick data:
 docker compose exec marketick /app/sample-seed
 ```
 
+Drop and recreate the ClickHouse database (destructive — removes all ticks, candles, and symbols):
+
+```bash
+docker compose exec marketick /app/drop-database
+docker compose exec marketick /app/jalali-seed
+```
+
+Or restart the container after `drop-database`; the entrypoint auto-runs `jalali-seed` when `jalali_calendar` is empty.
+
+Locally (requires ClickHouse on `localhost`):
+
+```bash
+cd scripts
+CH_HOST=localhost go run drop_database.go
+CH_HOST=localhost go run seed_jalali_calendar.go
+```
+
 ## Environment variables
 
 | Variable     | Description                          | Default      |
