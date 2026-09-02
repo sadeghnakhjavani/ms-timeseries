@@ -32,16 +32,11 @@ seed_jalali_calendar_if_needed() {
 	fi
 }
 
-remove_ticks_ttl_if_present() {
-	clickhouse-client --query "ALTER TABLE ticks REMOVE TTL" 2>/dev/null || true
-}
-
 echo "Starting ClickHouse..."
 /entrypoint.sh &
 CLICKHOUSE_PID=$!
 
 wait_for_clickhouse
-remove_ticks_ttl_if_present
 seed_jalali_calendar_if_needed
 
 echo "Starting marketick API..."

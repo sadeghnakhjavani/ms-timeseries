@@ -884,72 +884,8 @@
     },
     {
       "name": "04 - GET /api/v1/ticks",
-      "description": "Read raw ticks for any from/to date range. Run folder 02 for POSTMAN_TEST_* symbols, or use seeded BTCUSDT/USDIRR after sample-seed.",
+      "description": "Read raw ticks (7-day TTL). Run folder 02 first so POSTMAN_TEST_* symbols have recent ticks on 2026-09-02.",
       "item": [
-        {
-          "name": "BTCUSDT historical ticks (seeded gregorian)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/api/v1/ticks?symbol={{gregorian_symbol}}&from=2020-01-01&to=2020-01-07",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "ticks"],
-              "query": [
-                {"key": "symbol", "value": "{{gregorian_symbol}}"},
-                {"key": "from", "value": "2020-01-01"},
-                {"key": "to", "value": "2020-01-07"}
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "const body = pm.response.json().data;",
-                  "pm.test('Has historical ticks', () => pm.expect(body.ticks.length).to.be.above(0));",
-                  "pm.test('Metadata count matches ticks', () => {",
-                  "  pm.expect(pm.response.json().metadata.count).to.eql(body.ticks.length);",
-                  "});"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "USDIRR historical ticks (seeded jalali)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/api/v1/ticks?symbol={{jalali_symbol}}&from=2000-01-01&to=2000-01-07",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "ticks"],
-              "query": [
-                {"key": "symbol", "value": "{{jalali_symbol}}"},
-                {"key": "from", "value": "2000-01-01"},
-                {"key": "to", "value": "2000-01-07"}
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Has historical ticks', () => {",
-                  "  pm.expect(pm.response.json().data.ticks.length).to.be.above(0);",
-                  "});"
-                ]
-              }
-            }
-          ]
-        },
         {
           "name": "Read gregorian test symbol ticks",
           "request": {

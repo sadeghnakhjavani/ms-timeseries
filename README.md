@@ -162,9 +162,9 @@ Query raw ticks for a symbol within a date range. Calendar is derived server-sid
 
 Sending `calendar` returns `400`.
 
-Day boundaries follow the symbol calendar: UTC dates for gregorian symbols, `Asia/Tehran` dates for jalali symbols. Any `from`/`to` range is supported (not limited to the current day).
+Day boundaries follow the symbol calendar: UTC dates for gregorian symbols, `Asia/Tehran` dates for jalali symbols.
 
-Raw ticks are retained without TTL and can be queried for historical dates when data exists.
+Raw ticks expire after **7 days** (see [Raw tick TTL](#raw-tick-ttl)). Use candles for historical data beyond that window.
 
 **Success (`200 OK`):**
 
@@ -276,9 +276,19 @@ Each symbol has exactly **one immutable calendar** (`gregorian` or `jalali`), se
 - Month/year boundaries from precomputed `jalali_calendar` dictionary
 - No runtime Jalali arithmetic in the HTTP application
 
-## Tick storage
+## Raw tick TTL
 
-Raw ticks are stored without TTL. `GET /api/v1/ticks` accepts any `from`/`to` date range. Candle aggregates are still built at insert time via materialized views.
+Raw ticks in the `ticks` table expire after **7 days** (`TTL toDateTime(ts) + INTERVAL 7 DAY`). This is safe because materialized views aggregate every inserted tick into candle tables immediately. Candle aggregates and `symbols` rows are unaffected by tick TTL.
+
+### Manual TTL monitoring
+
+Run periodically as an early-warning check:
+
+```sql
+SELECT count()
+FROM ticks
+WHERE ts < now() - INTERVAL 6 DAY;
+```
 
 ## ClickHouse version
 
