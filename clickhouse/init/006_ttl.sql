@@ -1,0 +1,2 @@
+-- Raw ticks are retained without TTL so GET /api/v1/ticks can query any date range.
+-- Candle aggregates are still built at insert time via materialized views.

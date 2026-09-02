@@ -1,0 +1,23 @@
+services:
+  marketick:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: marketick
+    ports:
+      - "${APP_PORT:-8080}:8080"
+      - "8123:8123"
+      - "9000:9000"
+    env_file:
+      - .env
+    environment:
+      CH_HOST: localhost
+      CH_PORT: "9000"
+      APP_PORT: "8080"
+      PAGE_DEFAULT_LIMIT: "${PAGE_DEFAULT_LIMIT:-1000}"
+      PAGE_MAX_LIMIT: "${PAGE_MAX_LIMIT:-1000}"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+
+volumes:
+  clickhouse_data:

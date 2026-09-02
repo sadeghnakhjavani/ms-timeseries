@@ -1,0 +1,1265 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "Marketick API",
+    "description": "Tests for all Marketick HTTP endpoints.\n\n## Before running this collection\n\nSeed scripts are CLI-only (not HTTP). Run these first:\n\n```bash\ndocker compose up -d --build\n\n# Calendar is auto-seeded on first start; reload manually if needed:\ndocker compose exec marketick /app/jalali-seed\n\n# Optional sample BTCUSDT + USDIRR tick data:\ndocker compose exec marketick /app/sample-seed\n```\n\nOr locally (with ClickHouse on localhost):\n\n```bash\ncd scripts\nCH_HOST=localhost go run seed_jalali_calendar.go\nCH_HOST=localhost go run seed_sample_data.go\n```\n\nImport `Local.postman_environment.json` and set `api_key` to match your `.env`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-API-Key",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{api_key}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "api_key",
+      "value": "change-me"
+    },
+    {
+      "key": "gregorian_symbol",
+      "value": "BTCUSDT"
+    },
+    {
+      "key": "jalali_symbol",
+      "value": "USDIRR"
+    },
+    {
+      "key": "test_symbol_greg",
+      "value": "POSTMAN_TEST_GREG"
+    },
+    {
+      "key": "test_symbol_jalali",
+      "value": "POSTMAN_TEST_JALALI"
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Seed data verification",
+      "description": "Confirms sample seed data is present via the candles API. Fails if you have not run jalali-seed and sample-seed.",
+      "item": [
+        {
+          "name": "BTCUSDT daily candles (seeded gregorian)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/candles?symbol={{gregorian_symbol}}&timeframe=1d&from=2020-01-01&to=2020-01-31",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "candles"],
+              "query": [
+                {"key": "symbol", "value": "{{gregorian_symbol}}"},
+                {"key": "timeframe", "value": "1d"},
+                {"key": "from", "value": "2020-01-01"},
+                {"key": "to", "value": "2020-01-31"}
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json().data;",
+                  "pm.test('Symbol is BTCUSDT', () => pm.expect(body.symbol).to.eql('BTCUSDT'));",
+                  "pm.test('Calendar is gregorian', () => pm.expect(body.calendar).to.eql('gregorian'));",
+                  "pm.test('Has seeded candles', () => pm.expect(body.candles.length).to.be.above(0));",
+                  "pm.test('Metadata present', () => {",
+                  "  const m = pm.response.json().metadata;",
+                  "  pm.expect(m.page).to.eql(1);",
+                  "  pm.expect(m.limit).to.eql(1000);",
+                  "  pm.expect(m).to.have.property('has_more');",
+                  "  pm.expect(m.count).to.eql(body.candles.length);",
+                  "});",
+                  "pm.test('Candle has OHLCV fields', () => {",
+                  "  const c = body.candles[0];",
+                  "  pm.expect(c).to.have.property('open');",
+                  "  pm.expect(c).to.have.property('high');",
+                  "  pm.expect(c).to.have.property('low');",
+                  "  pm.expect(c).to.have.property('close');",
+                  "  pm.expect(c).to.have.property('volume');",
+                  "  pm.expect(c).to.have.property('tick_count');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "USDIRR daily candles (seeded jalali)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/candles?symbol={{jalali_symbol}}&timeframe=1d&from=2000-01-01&to=2000-01-31",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "candles"],
+              "query": [
+                {"key": "symbol", "value": "{{jalali_symbol}}"},
+                {"key": "timeframe", "value": "1d"},
+                {"key": "from", "value": "2000-01-01"},
+                {"key": "to", "value": "2000-01-31"}
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json().data;",
+                  "pm.test('Symbol is USDIRR', () => pm.expect(body.symbol).to.eql('USDIRR'));",
+                  "pm.test('Calendar is jalali', () => pm.expect(body.calendar).to.eql('jalali'));",
+                  "pm.test('Has seeded candles', () => pm.expect(body.candles.length).to.be.above(0));",
+                  "pm.test('Jalali fields present', () => {",
+                  "  const c = body.candles[0];",
+                  "  pm.expect(c).to.have.property('jalali_year');",
+                  "  pm.expect(c).to.have.property('jalali_month');",
+                  "  pm.expect(c).to.have.property('jalali_day');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 - Auth",
+      "item": [
+        {
+          "name": "Missing API key -> 401",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/candles?symbol={{gregorian_symbol}}&timeframe=1d&from=2020-01-01&to=2020-01-02",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "candles"],
+              "query": [
+                {"key": "symbol", "value": "{{gregorian_symbol}}"},
+                {"key": "timeframe", "value": "1d"},
+                {"key": "from", "value": "2020-01-01"},
+                {"key": "to", "value": "2020-01-02"}
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Error code unauthorized', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.eql('unauthorized');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invalid API key -> 401",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET",
+            "header": [
+              {"key": "X-API-Key", "value": "wrong-key", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/candles?symbol={{gregorian_symbol}}&timeframe=1d&from=2020-01-01&to=2020-01-02",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "candles"],
+              "query": [
+                {"key": "symbol", "value": "{{gregorian_symbol}}"},
+                {"key": "timeframe", "value": "1d"},
+                {"key": "from", "value": "2020-01-01"},
+                {"key": "to", "value": "2020-01-02"}
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Error code unauthorized', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.eql('unauthorized');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - POST /api/v1/ticks",
+      "item": [
+        {
+          "name": "Ingest gregorian tick (new symbol)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticks\": [\n    {\n      \"symbol\": \"{{test_symbol_greg}}\",\n      \"value\": \"100.50000000\",\n      \"volume\": \"2500.00000000\",\n      \"calendar\": \"gregorian\",\n      \"timestamp\": \"2026-09-02T10:15:30.123Z\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ticks",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ticks"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Accepted count', () => {",
+                  "  pm.expect(pm.response.json().data.accepted).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ingest jalali tick (new symbol)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticks\": [\n    {\n      \"symbol\": \"{{test_symbol_jalali}}\",\n      \"value\": \"125000.00000000\",\n      \"volume\": \"500.00000000\",\n      \"calendar\": \"jalali\",\n      \"timestamp\": \"2026-09-02T06:45:00.000Z\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ticks",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ticks"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Accepted count', () => {",
+                  "  pm.expect(pm.response.json().data.accepted).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ingest batch (multiple ticks, same symbol)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticks\": [\n    {\n      \"symbol\": \"{{test_symbol_greg}}\",\n      \"value\": \"101.00000000\",\n      \"volume\": \"100.00000000\",\n      \"calendar\": \"gregorian\",\n      \"timestamp\": \"2026-09-02T11:00:00.000Z\"\n    },\n    {\n      \"symbol\": \"{{test_symbol_greg}}\",\n      \"value\": \"102.00000000\",\n      \"volume\": \"200.00000000\",\n      \"calendar\": \"gregorian\",\n      \"timestamp\": \"2026-09-02T12:00:00.000Z\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ticks",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ticks"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Accepted 2 ticks', () => {",
+                  "  pm.expect(pm.response.json().data.accepted).to.eql(2);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Empty ticks array -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticks\": []\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ticks",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ticks"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Invalid request', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.eql('invalid_request');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invalid calendar -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticks\": [\n    {\n      \"symbol\": \"BAD_CAL\",\n      \"value\": \"1.00000000\",\n      \"volume\": \"1.00000000\",\n      \"calendar\": \"lunar\",\n      \"timestamp\": \"2026-09-02T10:00:00.000Z\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ticks",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ticks"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Calendar mismatch in batch -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticks\": [\n    {\n      \"symbol\": \"MIXED_CAL\",\n      \"value\": \"1.00000000\",\n      \"volume\": \"1.00000000\",\n      \"calendar\": \"gregorian\",\n      \"timestamp\": \"2026-09-02T10:00:00.000Z\"\n    },\n    {\n      \"symbol\": \"MIXED_CAL\",\n      \"value\": \"2.00000000\",\n      \"volume\": \"1.00000000\",\n      \"calendar\": \"jalali\",\n      \"timestamp\": \"2026-09-02T11:00:00.000Z\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ticks",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ticks"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Calendar mismatch error', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.eql('calendar_mismatch');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Calendar mismatch with registered symbol -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticks\": [\n    {\n      \"symbol\": \"{{gregorian_symbol}}\",\n      \"value\": \"1.00000000\",\n      \"volume\": \"1.00000000\",\n      \"calendar\": \"jalali\",\n      \"timestamp\": \"2026-09-02T10:00:00.000Z\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ticks",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ticks"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Calendar mismatch error', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.eql('calendar_mismatch');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - GET /api/v1/candles",
+      "item": [
+        {
+          "name": "Gregorian - all timeframes (BTCUSDT)",
+          "item": [
+            {
+              "name": "1d",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/candles?symbol={{gregorian_symbol}}&timeframe=1d&from=2020-01-01&to=2020-12-31",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "candles"],
+                  "query": [
+                    {"key": "symbol", "value": "{{gregorian_symbol}}"},
+                    {"key": "timeframe", "value": "1d"},
+                    {"key": "from", "value": "2020-01-01"},
+                    {"key": "to", "value": "2020-12-31"}
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "pm.test('Gregorian calendar', () => {",
+                      "  pm.expect(pm.response.json().data.calendar).to.eql('gregorian');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1w",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/candles?symbol={{gregorian_symbol}}&timeframe=1w&from=2020-01-01&to=2020-12-31",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "candles"],
+                  "query": [
+                    {"key": "symbol", "value": "{{gregorian_symbol}}"},
+                    {"key": "timeframe", "value": "1w"},
+                    {"key": "from", "value": "2020-01-01"},
+                    {"key": "to", "value": "2020-12-31"}
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1m",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/candles?symbol={{gregorian_symbol}}&timeframe=1m&from=2020-01-01&to=2020-12-31",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "candles"],
+                  "query": [
+                    {"key": "symbol", "value": "{{gregorian_symbol}}"},
+                    {"key": "timeframe", "value": "1m"},
+                    {"key": "from", "value": "2020-01-01"},
+                    {"key": "to", "value": "2020-12-31"}
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1y",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/candles?symbol={{gregorian_symbol}}&timeframe=1y&from=2020-01-01&to=2025-12-31",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "candles"],
+                  "query": [
+                    {"key": "symbol", "value": "{{gregorian_symbol}}"},
+                    {"key": "timeframe", "value": "1y"},
+                    {"key": "from", "value": "2020-01-01"},
+                    {"key": "to", "value": "2025-12-31"}
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Jalali - all timeframes (USDIRR)",
+          "item": [
+            {
+              "name": "1d",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/candles?symbol={{jalali_symbol}}&timeframe=1d&from=2000-01-01&to=2000-12-31",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "candles"],
+                  "query": [
+                    {"key": "symbol", "value": "{{jalali_symbol}}"},
+                    {"key": "timeframe", "value": "1d"},
+                    {"key": "from", "value": "2000-01-01"},
+                    {"key": "to", "value": "2000-12-31"}
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "pm.test('Jalali calendar', () => {",
+                      "  pm.expect(pm.response.json().data.calendar).to.eql('jalali');",
+                      "});",
+                      "pm.test('Jalali date fields', () => {",
+                      "  const c = pm.response.json().data.candles[0];",
+                      "  pm.expect(c).to.have.property('jalali_year');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1w",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/candles?symbol={{jalali_symbol}}&timeframe=1w&from=2000-01-01&to=2000-12-31",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "candles"],
+                  "query": [
+                    {"key": "symbol", "value": "{{jalali_symbol}}"},
+                    {"key": "timeframe", "value": "1w"},
+                    {"key": "from", "value": "2000-01-01"},
+                    {"key": "to", "value": "2000-12-31"}
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1m",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/candles?symbol={{jalali_symbol}}&timeframe=1m&from=2000-01-01&to=2000-12-31",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "candles"],
+                  "query": [
+                    {"key": "symbol", "value": "{{jalali_symbol}}"},
+                    {"key": "timeframe", "value": "1m"},
+                    {"key": "from", "value": "2000-01-01"},
+                    {"key": "to", "value": "2000-12-31"}
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1y",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/candles?symbol={{jalali_symbol}}&timeframe=1y&from=2000-01-01&to=2025-12-31",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "candles"],
+                  "query": [
+                    {"key": "symbol", "value": "{{jalali_symbol}}"},
+                    {"key": "timeframe", "value": "1y"},
+                    {"key": "from", "value": "2000-01-01"},
+                    {"key": "to", "value": "2025-12-31"}
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Query ingested test symbol candles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/candles?symbol={{test_symbol_greg}}&timeframe=1d&from=2026-09-02&to=2026-09-02",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "candles"],
+              "query": [
+                {"key": "symbol", "value": "{{test_symbol_greg}}"},
+                {"key": "timeframe", "value": "1d"},
+                {"key": "from", "value": "2026-09-02"},
+                {"key": "to", "value": "2026-09-02"}
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has candles from ingested ticks', () => {",
+                  "  pm.expect(pm.response.json().data.candles.length).to.be.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "calendar param not allowed -> 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/candles?symbol={{gregorian_symbol}}&calendar=gregorian&timeframe=1d&from=2020-01-01&to=2020-01-02",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "candles"],
+              "query": [
+                {"key": "symbol", "value": "{{gregorian_symbol}}"},
+                {"key": "calendar", "value": "gregorian"},
+                {"key": "timeframe", "value": "1d"},
+                {"key": "from", "value": "2020-01-01"},
+                {"key": "to", "value": "2020-01-02"}
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Missing symbol -> 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/candles?timeframe=1d&from=2020-01-01&to=2020-01-02",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "candles"],
+              "query": [
+                {"key": "timeframe", "value": "1d"},
+                {"key": "from", "value": "2020-01-01"},
+                {"key": "to", "value": "2020-01-02"}
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown symbol -> 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/candles?symbol=DOES_NOT_EXIST&timeframe=1d&from=2020-01-01&to=2020-01-02",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "candles"],
+              "query": [
+                {"key": "symbol", "value": "DOES_NOT_EXIST"},
+                {"key": "timeframe", "value": "1d"},
+                {"key": "from", "value": "2020-01-01"},
+                {"key": "to", "value": "2020-01-02"}
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Not found error', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.eql('not_found');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invalid timeframe -> 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/candles?symbol={{gregorian_symbol}}&timeframe=5m&from=2020-01-01&to=2020-01-02",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "candles"],
+              "query": [
+                {"key": "symbol", "value": "{{gregorian_symbol}}"},
+                {"key": "timeframe", "value": "5m"},
+                {"key": "from", "value": "2020-01-01"},
+                {"key": "to", "value": "2020-01-02"}
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "from after to -> 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/candles?symbol={{gregorian_symbol}}&timeframe=1d&from=2020-02-01&to=2020-01-01",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "candles"],
+              "query": [
+                {"key": "symbol", "value": "{{gregorian_symbol}}"},
+                {"key": "timeframe", "value": "1d"},
+                {"key": "from", "value": "2020-02-01"},
+                {"key": "to", "value": "2020-01-01"}
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - GET /api/v1/ticks",
+      "description": "Read raw ticks for any from/to date range. Run folder 02 for POSTMAN_TEST_* symbols, or use seeded BTCUSDT/USDIRR after sample-seed.",
+      "item": [
+        {
+          "name": "BTCUSDT historical ticks (seeded gregorian)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ticks?symbol={{gregorian_symbol}}&from=2020-01-01&to=2020-01-07",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ticks"],
+              "query": [
+                {"key": "symbol", "value": "{{gregorian_symbol}}"},
+                {"key": "from", "value": "2020-01-01"},
+                {"key": "to", "value": "2020-01-07"}
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json().data;",
+                  "pm.test('Has historical ticks', () => pm.expect(body.ticks.length).to.be.above(0));",
+                  "pm.test('Metadata count matches ticks', () => {",
+                  "  pm.expect(pm.response.json().metadata.count).to.eql(body.ticks.length);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "USDIRR historical ticks (seeded jalali)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ticks?symbol={{jalali_symbol}}&from=2000-01-01&to=2000-01-07",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ticks"],
+              "query": [
+                {"key": "symbol", "value": "{{jalali_symbol}}"},
+                {"key": "from", "value": "2000-01-01"},
+                {"key": "to", "value": "2000-01-07"}
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has historical ticks', () => {",
+                  "  pm.expect(pm.response.json().data.ticks.length).to.be.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Read gregorian test symbol ticks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ticks?symbol={{test_symbol_greg}}&from=2026-09-02&to=2026-09-02",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ticks"],
+              "query": [
+                {"key": "symbol", "value": "{{test_symbol_greg}}"},
+                {"key": "from", "value": "2026-09-02"},
+                {"key": "to", "value": "2026-09-02"}
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json().data;",
+                  "pm.test('Gregorian calendar', () => pm.expect(body.calendar).to.eql('gregorian'));",
+                  "pm.test('Has ticks from ingest', () => pm.expect(body.ticks.length).to.be.above(0));",
+                  "pm.test('Tick fields present', () => {",
+                  "  const t = body.ticks[0];",
+                  "  pm.expect(t).to.have.property('value');",
+                  "  pm.expect(t).to.have.property('volume');",
+                  "  pm.expect(t).to.have.property('timestamp');",
+                  "});",
+                  "pm.test('Metadata present', () => {",
+                  "  const m = pm.response.json().metadata;",
+                  "  pm.expect(m).to.have.property('page');",
+                  "  pm.expect(m).to.have.property('limit');",
+                  "  pm.expect(m).to.have.property('has_more');",
+                  "  pm.expect(m.count).to.eql(body.ticks.length);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Read jalali test symbol ticks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ticks?symbol={{test_symbol_jalali}}&from=2026-09-02&to=2026-09-02",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ticks"],
+              "query": [
+                {"key": "symbol", "value": "{{test_symbol_jalali}}"},
+                {"key": "from", "value": "2026-09-02"},
+                {"key": "to", "value": "2026-09-02"}
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json().data;",
+                  "pm.test('Jalali calendar', () => pm.expect(body.calendar).to.eql('jalali'));",
+                  "pm.test('Has ticks from ingest', () => pm.expect(body.ticks.length).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Read with limit and page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ticks?symbol={{test_symbol_greg}}&from=2026-09-02&to=2026-09-02&limit=1&page=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ticks"],
+              "query": [
+                {"key": "symbol", "value": "{{test_symbol_greg}}"},
+                {"key": "from", "value": "2026-09-02"},
+                {"key": "to", "value": "2026-09-02"},
+                {"key": "limit", "value": "1"},
+                {"key": "page", "value": "1"}
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Respects limit', () => {",
+                  "  pm.expect(pm.response.json().data.ticks.length).to.eql(1);",
+                  "});",
+                  "pm.test('Has more pages', () => {",
+                  "  pm.expect(pm.response.json().metadata.has_more).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "calendar param not allowed -> 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ticks?symbol={{test_symbol_greg}}&calendar=gregorian&from=2026-09-02&to=2026-09-02",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ticks"],
+              "query": [
+                {"key": "symbol", "value": "{{test_symbol_greg}}"},
+                {"key": "calendar", "value": "gregorian"},
+                {"key": "from", "value": "2026-09-02"},
+                {"key": "to", "value": "2026-09-02"}
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown symbol -> 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ticks?symbol=DOES_NOT_EXIST&from=2026-09-02&to=2026-09-02",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ticks"],
+              "query": [
+                {"key": "symbol", "value": "DOES_NOT_EXIST"},
+                {"key": "from", "value": "2026-09-02"},
+                {"key": "to", "value": "2026-09-02"}
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Not found error', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.eql('not_found');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Missing symbol -> 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ticks?from=2026-09-02&to=2026-09-02",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ticks"],
+              "query": [
+                {"key": "from", "value": "2026-09-02"},
+                {"key": "to", "value": "2026-09-02"}
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 - DELETE /api/v1/symbols/{symbol}",
+      "item": [
+        {
+          "name": "Delete test gregorian symbol",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/symbols/{{test_symbol_greg}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "symbols", "{{test_symbol_greg}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json().data;",
+                  "pm.test('Symbol in response', () => {",
+                  "  pm.expect(body.symbol).to.eql(pm.collectionVariables.get('test_symbol_greg'));",
+                  "});",
+                  "pm.test('Deleted summary present', () => {",
+                  "  pm.expect(body.deleted).to.be.an('object');",
+                  "  pm.expect(body.deleted.symbols).to.eql('deleted');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete test jalali symbol",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/symbols/{{test_symbol_jalali}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "symbols", "{{test_symbol_jalali}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete non-existent symbol (no-op)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/symbols/NEVER_REGISTERED",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "symbols", "NEVER_REGISTERED"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 (no-op)', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Deleted symbol returns 404 on candles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/candles?symbol={{test_symbol_greg}}&timeframe=1d&from=2026-09-02&to=2026-09-02",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "candles"],
+              "query": [
+                {"key": "symbol", "value": "{{test_symbol_greg}}"},
+                {"key": "timeframe", "value": "1d"},
+                {"key": "from", "value": "2026-09-02"},
+                {"key": "to", "value": "2026-09-02"}
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404 after delete', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
