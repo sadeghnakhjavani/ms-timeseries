@@ -119,7 +119,7 @@ func formatDate(t time.Time) string {
 }
 
 func cleanTable(ctx context.Context, conn driver.Conn) error {
-	if err := conn.Exec(ctx, "TRUNCATE TABLE jalali_calendar"); err != nil {
+	if err := conn.Exec(ctx, "TRUNCATE TABLE IF EXISTS jalali_calendar"); err != nil {
 		return fmt.Errorf("truncate: %w", err)
 	}
 

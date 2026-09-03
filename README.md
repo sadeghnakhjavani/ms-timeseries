@@ -59,13 +59,82 @@ docker compose down --remove-orphans
 
 ### Exposed ports
 
-| Port | Service |
-|------|---------|
-| `8080` | HTTP API |
-| `8123` | ClickHouse HTTP UI |
-| `9000` | ClickHouse native |
 
-Host port `8080` can be changed via `APP_PORT` in `.env`.
+| Port   | Service                  |
+| ------ | ------------------------ |
+| `8080` | HTTP API                 |
+| `8123` | ClickHouse HTTP + web UI |
+| `9000` | ClickHouse native        |
+
+
+Host port `8080` can be changed via `APP_PORT` in `.env`. Compose binds these to `127.0.0.1` only (not the public internet).
+
+### ClickHouse web UI
+
+ClickHouse ships a built-in SQL Play UI on the HTTP port.
+
+1. Start the stack: `docker compose up -d`
+2. Open [http://127.0.0.1:8123/play](http://127.0.0.1:8123/play) in a browser on the host
+
+Default user is `default` with an empty password (see `CH_USER` / `CH_PASSWORD` in `.env`).
+
+Play does not list rows by itself — run SQL. Examples after a TGJU seed (e.g. `ms_timeseries_base_metals_history`):
+
+```sql
+-- registered symbols
+SELECT * FROM symbols;
+
+-- raw ticks for one symbol
+SELECT *
+FROM ticks
+WHERE symbol = 'XCUUSD'
+ORDER BY ts DESC
+LIMIT 50;
+
+-- daily Jalali candles (AggregatingMergeTree needs -Merge combinators)
+SELECT
+    symbol,
+    bucket_start,
+    argMinMerge(open) AS open,
+    maxMerge(high) AS high,
+    minMerge(low) AS low,
+    argMaxMerge(close) AS close,
+    sumMerge(volume) AS volume,
+    countMerge(ticks) AS ticks
+FROM candles_1d_jalali
+WHERE symbol = 'USDIRR'
+GROUP BY symbol, bucket_start
+ORDER BY bucket_start DESC
+LIMIT 50;
+
+-- daily Gregorian candles (USD / non-IRR symbols)
+SELECT
+    symbol,
+    bucket_start,
+    argMinMerge(open) AS open,
+    maxMerge(high) AS high,
+    minMerge(low) AS low,
+    argMaxMerge(close) AS close,
+    sumMerge(volume) AS volume,
+    countMerge(ticks) AS ticks
+FROM candles_1d_greg
+WHERE symbol = 'XCUUSD'
+GROUP BY symbol, bucket_start
+ORDER BY bucket_start DESC
+LIMIT 50;
+```
+
+Other candle tables: `candles_1w_jalali`, `candles_1m_jalali`, `candles_1y_jalali`, `candles_1w_greg`, `candles_1m_greg`, `candles_1y_greg`.
+
+You can also run one-off queries without the UI:
+
+```bash
+# From the host
+curl 'http://127.0.0.1:8123/?query=SHOW%20TABLES'
+
+# Or inside the container
+docker compose exec ms-timeseries clickhouse-client --query 'SHOW TABLES'
+```
 
 ### Seed commands
 
@@ -100,17 +169,19 @@ CH_HOST=localhost go run seed_jalali_calendar.go
 
 ## Environment variables
 
-| Variable     | Description                          | Default      |
-|--------------|--------------------------------------|--------------|
-| `CH_HOST`    | ClickHouse host (use `localhost` in the container) | `localhost`  |
-| `CH_PORT`    | ClickHouse native port               | `9000`       |
-| `CH_USER`    | ClickHouse user                      | `default`    |
-| `CH_PASSWORD`| ClickHouse password                  | (empty)      |
-| `CH_DATABASE`| ClickHouse database                  | `default`    |
-| `API_KEY`    | Required API key for all endpoints   | —            |
-| `APP_PORT`   | Host port mapped to the app          | `8080`       |
-| `PAGE_DEFAULT_LIMIT` | Default `limit` for paginated queries when omitted | `1000` |
-| `PAGE_MAX_LIMIT` | Hard cap for client `limit` parameter | `1000` |
+
+| Variable             | Description                                        | Default     |
+| -------------------- | -------------------------------------------------- | ----------- |
+| `CH_HOST`            | ClickHouse host (use `localhost` in the container) | `localhost` |
+| `CH_PORT`            | ClickHouse native port                             | `9000`      |
+| `CH_USER`            | ClickHouse user                                    | `default`   |
+| `CH_PASSWORD`        | ClickHouse password                                | (empty)     |
+| `CH_DATABASE`        | ClickHouse database                                | `default`   |
+| `API_KEY`            | Required API key for all endpoints                 | —           |
+| `APP_PORT`           | Host port mapped to the app                        | `8080`      |
+| `PAGE_DEFAULT_LIMIT` | Default `limit` for paginated queries when omitted | `1000`      |
+| `PAGE_MAX_LIMIT`     | Hard cap for client `limit` parameter              | `1000`      |
+
 
 The application exits on startup if `API_KEY` is missing or empty, if ClickHouse is unreachable, if required tables/dictionary are missing, or if `jalali_calendar` is empty.
 
