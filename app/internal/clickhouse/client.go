@@ -7,7 +7,7 @@ import (
 
 	ch "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
-	"github.com/iranrates/marketick/internal/config"
+	"github.com/iranrates/ms-timeseries/internal/config"
 )
 
 type Client struct {
@@ -88,7 +88,7 @@ func (c *Client) StartupChecks(ctx context.Context) error {
 		return fmt.Errorf("check jalali_calendar: %w", err)
 	}
 	if calCount == 0 {
-		return fmt.Errorf("jalali_calendar is empty; run: docker compose exec marketick /app/jalali-seed")
+		return fmt.Errorf("jalali_calendar is empty; run: docker compose exec ms-timeseries /app/jalali-seed")
 	}
 
 	return nil

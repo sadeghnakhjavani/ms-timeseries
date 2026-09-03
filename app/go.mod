@@ -1,4 +1,4 @@
-module github.com/iranrates/marketick
+module github.com/iranrates/ms-timeseries
 
 go 1.23.0
 

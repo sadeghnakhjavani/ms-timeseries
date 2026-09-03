@@ -3,8 +3,8 @@ package api
 import (
 	"net/http"
 
-	chstore "github.com/iranrates/marketick/internal/clickhouse"
-	"github.com/iranrates/marketick/internal/model"
+	chstore "github.com/iranrates/ms-timeseries/internal/clickhouse"
+	"github.com/iranrates/ms-timeseries/internal/model"
 )
 
 type CandlesHandler struct {

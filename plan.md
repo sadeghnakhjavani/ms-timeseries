@@ -1,6 +1,6 @@
-# MARKETICK — Execution Plan for Cursor Agent
+# MS-TIMESERIES — Execution Plan for Cursor Agent
 
-Repository name: `marketick`
+Repository name: `ms-timeseries`
 
 Purpose: Financial microservice that ingests ticks and serves OHLCV candles (`1d/1w/1m/1y`) in both Gregorian and Jalali calendars, backed by ClickHouse.
 
@@ -110,7 +110,7 @@ This document is the **single source of truth** for the build. Every decision be
 Create the following structure first:
 
 ```text
-marketick/
+ms-timeseries/
 ├── docker-compose.yml
 ├── .env.example
 ├── README.md

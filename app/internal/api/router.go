@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	chstore "github.com/iranrates/marketick/internal/clickhouse"
+	chstore "github.com/iranrates/ms-timeseries/internal/clickhouse"
 )
 
 func NewRouter(store *chstore.Client, auth *Authenticator, pagination PaginationSettings) http.Handler {

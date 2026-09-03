@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iranrates/marketick/internal/model"
+	"github.com/iranrates/ms-timeseries/internal/model"
 )
 
 type candleTable struct {

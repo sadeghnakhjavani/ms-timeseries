@@ -12,7 +12,7 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	WriteSuccess(w, http.StatusOK, map[string]string{
-		"service": "marketick",
+		"service": "ms-timeseries",
 		"health":  "/health",
 		"api":     "/api/v1",
 	})

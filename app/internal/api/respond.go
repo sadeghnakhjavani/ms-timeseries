@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/iranrates/marketick/internal/model"
+	"github.com/iranrates/ms-timeseries/internal/model"
 )
 
 func WriteJSON(w http.ResponseWriter, status int, payload interface{}) {

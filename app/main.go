@@ -11,9 +11,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/iranrates/marketick/internal/api"
-	"github.com/iranrates/marketick/internal/config"
-	chstore "github.com/iranrates/marketick/internal/clickhouse"
+	"github.com/iranrates/ms-timeseries/internal/api"
+	"github.com/iranrates/ms-timeseries/internal/config"
+	chstore "github.com/iranrates/ms-timeseries/internal/clickhouse"
 )
 
 func main() {
@@ -49,7 +49,7 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("marketick listening on %s", addr)
+		log.Printf("ms-timeseries listening on %s", addr)
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("server error: %v", err)
 		}

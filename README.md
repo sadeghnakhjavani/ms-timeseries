@@ -1,4 +1,4 @@
-# MARKETICK
+# MS-TIMESERIES
 
 Financial microservice that ingests market ticks and serves OHLCV candles (`1d`, `1w`, `1m`, `1y`) in both Gregorian and Jalali calendars, backed by ClickHouse.
 
@@ -6,7 +6,7 @@ Financial microservice that ingests market ticks and serves OHLCV candles (`1d`,
 
 Single container:
 
-- **marketick** — Go HTTP API + ClickHouse (tick storage, live aggregation via materialized views, symbol registry, Jalali calendar dictionary)
+- **ms-timeseries** — Go HTTP API + ClickHouse (tick storage, live aggregation via materialized views, symbol registry, Jalali calendar dictionary)
 
 ```
                     ┌──────────────────────┐
@@ -15,7 +15,7 @@ Single container:
                                │ X-API-Key
                                ▼
                     ┌──────────────────────┐
-                    │      marketick       │
+                    │     ms-timeseries      │
                     │  Go API + ClickHouse │
                     └──────────┬───────────┘
                                │
@@ -72,20 +72,20 @@ Host port `8080` can be changed via `APP_PORT` in `.env`.
 Reload the Jalali calendar (truncates and reloads `jalali_calendar`):
 
 ```bash
-docker compose exec marketick /app/jalali-seed
+docker compose exec ms-timeseries /app/jalali-seed
 ```
 
 Load sample BTCUSDT / USDIRR tick data:
 
 ```bash
-docker compose exec marketick /app/sample-seed
+docker compose exec ms-timeseries /app/sample-seed
 ```
 
 Drop and recreate the ClickHouse database (destructive — removes all ticks, candles, and symbols):
 
 ```bash
-docker compose exec marketick /app/drop-database
-docker compose exec marketick /app/jalali-seed
+docker compose exec ms-timeseries /app/drop-database
+docker compose exec ms-timeseries /app/jalali-seed
 ```
 
 Or restart the container after `drop-database`; the entrypoint auto-runs `jalali-seed` when `jalali_calendar` is empty.
@@ -309,7 +309,7 @@ WHERE ts < now() - INTERVAL 6 DAY;
 
 ## ClickHouse version
 
-Pinned image base: `clickhouse:26.3.25.2-jammy` (ClickHouse **26.3.25.2**). The Go API and ClickHouse run together in the `marketick` container. See [Exposed ports](#exposed-ports) above.
+Pinned image base: `clickhouse:26.3.25.2-jammy` (ClickHouse **26.3.25.2**). The Go API and ClickHouse run together in the `ms-timeseries` container. See [Exposed ports](#exposed-ports) above.
 
 ## Development
 
@@ -317,7 +317,7 @@ Build the app locally (requires Go 1.22+):
 
 ```bash
 cd app
-go build -o marketick .
+go build -o ms-timeseries .
 ```
 
 Run the seed script (requires ClickHouse):

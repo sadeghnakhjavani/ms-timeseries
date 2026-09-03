@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "name": "Marketick API",
-    "description": "Tests for all Marketick HTTP endpoints.\n\n## Before running this collection\n\nSeed scripts are CLI-only (not HTTP). Run these first:\n\n```bash\ndocker compose up -d --build\n\n# Calendar is auto-seeded on first start; reload manually if needed:\ndocker compose exec marketick /app/jalali-seed\n\n# Optional sample BTCUSDT + USDIRR tick data:\ndocker compose exec marketick /app/sample-seed\n```\n\nOr locally (with ClickHouse on localhost):\n\n```bash\ncd scripts\nCH_HOST=localhost go run seed_jalali_calendar.go\nCH_HOST=localhost go run seed_sample_data.go\n```\n\nImport `Local.postman_environment.json` and set `api_key` to match your `.env`.",
+    "name": "Ms-Timeseries API",
+    "description": "Tests for all Ms-Timeseries HTTP endpoints.\n\n## Before running this collection\n\nSeed scripts are CLI-only (not HTTP). Run these first:\n\n```bash\ndocker compose up -d --build\n\n# Calendar is auto-seeded on first start; reload manually if needed:\ndocker compose exec ms-timeseries /app/jalali-seed\n\n# Optional sample BTCUSDT + USDIRR tick data:\ndocker compose exec ms-timeseries /app/sample-seed\n```\n\nOr locally (with ClickHouse on localhost):\n\n```bash\ncd scripts\nCH_HOST=localhost go run seed_jalali_calendar.go\nCH_HOST=localhost go run seed_sample_data.go\n```\n\nImport `Local.postman_environment.json` and set `api_key` to match your `.env`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/iranrates/marketick/internal/model"
+	"github.com/iranrates/ms-timeseries/internal/model"
 )
 
 func (c *Client) GetSymbolCalendars(ctx context.Context, symbols []string) (map[string]model.Calendar, error) {

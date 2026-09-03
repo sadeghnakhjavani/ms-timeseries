@@ -1,9 +1,9 @@
 services:
-  marketick:
+  ms-timeseries:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: marketick
+    container_name: ms-timeseries
     ports:
       - "${APP_PORT:-8080}:8080"
       - "8123:8123"

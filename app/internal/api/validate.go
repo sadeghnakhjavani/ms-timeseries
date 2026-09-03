@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iranrates/marketick/internal/model"
+	"github.com/iranrates/ms-timeseries/internal/model"
 )
 
 const maxBodyBytes = 10 << 20 // 10 MiB

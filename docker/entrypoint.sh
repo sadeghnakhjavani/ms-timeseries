@@ -39,5 +39,5 @@ CLICKHOUSE_PID=$!
 wait_for_clickhouse
 seed_jalali_calendar_if_needed
 
-echo "Starting marketick API..."
-exec /app/marketick
+echo "Starting ms-timeseries API..."
+exec /app/ms-timeseries

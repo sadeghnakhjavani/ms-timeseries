@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/iranrates/marketick/internal/model"
+	"github.com/iranrates/ms-timeseries/internal/model"
 )
 
 func (c *Client) InsertTicks(ctx context.Context, ticks []model.Tick) error {
